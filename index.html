@@ -162,14 +162,14 @@ button:disabled {
 
 <div class="container">
 
-    <h2>CREATIVE STRUCTURES GROUPS — MAIL</h2>
+    <h2>Ranch Oldo Scents Mail</h2>
 
     <div class="form-group">
         <label>Send From</label>
         <input
             type="text"
             id="sendFrom"
-            value="info@creativestructuresgroups.com">
+            value="info@rancholdoscentavos.com">
     </div>
 
     <div class="form-group">
@@ -184,20 +184,12 @@ button:disabled {
         <input
             type="text"
             id="replyTo"
-            value="office@creativestructuresgroups.com">
+            value="office@rancholdoscentavos.com">
     </div>
 
     <div class="form-group">
         <label>Subject</label>
-        <select id="subject">
-            <option value="Initiative Discussion">Initiative Discussion</option>
-            <option value="Project Assistance">Project Assistance</option>
-            <option value="Company Collaboration">Company Collaboration</option>
-            <option value="Business Project Inquiry">Business Project Inquiry</option>
-            <option value="Inquiry Regarding Your Business or Project">
-                Inquiry Regarding Your Business or Project
-            </option>
-        </select>
+        <textarea id="subject" rows="5" placeholder="Enter multiple subjects, one per line"></textarea>
     </div>
 
     <div class="form-group">
@@ -313,7 +305,7 @@ async function startSending() {
                         from: sendFrom,
                         to: [recipient],
                         reply_to: replyTo,
-                        subject: subject,
+                        subject: subjectLines[recipientIndex % subjectLines.length],
                         body: body
                     })
                 });
