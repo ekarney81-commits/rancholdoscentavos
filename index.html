@@ -305,7 +305,7 @@ async function startSending() {
                         from: sendFrom,
                         to: [recipient],
                         reply_to: replyTo,
-                        subject: subjectLines[recipientIndex % subjectLines.length],
+                        subject: subjectLines[index % subjectLines.length],
                         body: body
                     })
                 });
