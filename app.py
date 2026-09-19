@@ -95,7 +95,7 @@ def send_email():
                 results.append({"email": email, "status": "Sent"})
 
             for email in failed:
-                results.append({"email": email, "status": "Failed"})
+                results.append({"email": email, "status": "Failed", "details": result})
 
             return jsonify({
                 "success": True,
