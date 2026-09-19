@@ -189,7 +189,13 @@ button:disabled {
 
     <div class="form-group">
         <label>Subject</label>
-        <textarea id="subject" rows="5" placeholder="Enter multiple subjects, one per line"></textarea>
+        <select id="subject">
+            <option value="Initiative Discussion">Initiative Discussion</option>
+            <option value="Project Assistance">Project Assistance</option>
+            <option value="Company Collaboration">Company Collaboration</option>
+            <option value="Business Project Inquiry">Business Project Inquiry</option>
+            <option value="Inquiry Regarding Your Business or Project">Inquiry Regarding Your Business or Project</option>
+        </select>
     </div>
 
     <div class="form-group">
@@ -305,7 +311,7 @@ async function startSending() {
                         from: sendFrom,
                         to: [recipient],
                         reply_to: replyTo,
-                        subject: subjectLines[index % subjectLines.length],
+                        subject: subject,
                         body: body
                     })
                 });
