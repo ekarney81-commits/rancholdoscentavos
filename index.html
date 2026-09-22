@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Creative Structures Groups — Mail Console</title>
+<title>Creative Workgroup — Mail Console</title>
 
 <style>
 :root {
@@ -32,19 +32,19 @@ body {
 
 .container {
     width: 100%;
-    max-width: 650px;
+    max-width: 850px;
     margin: 0 auto;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 30px;
     box-shadow: 0 10px 25px rgba(0,0,0,.3);
 }
 
 h2 {
     margin-top: 0;
-    font-size: 1.25rem;
-    letter-spacing: .05em;
+    font-size: 1.3rem;
+    letter-spacing: .04em;
     border-bottom: 1px solid var(--border);
     padding-bottom: 15px;
     color: #38bdf8;
@@ -57,7 +57,7 @@ h2 {
 label {
     display: block;
     margin-bottom: 8px;
-    font-size: .85rem;
+    font-size: .82rem;
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -65,40 +65,73 @@ label {
 }
 
 input,
-select,
 textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 11px 12px;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
     color: var(--text);
     font-size: .95rem;
 }
 
 textarea {
     resize: vertical;
-    min-height: 120px;
+    min-height: 110px;
     font-family: inherit;
 }
 
 input:focus,
-select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--accent);
 }
 
+.section-title {
+    margin: 28px 0 15px;
+    font-size: .95rem;
+    font-weight: 700;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.variant {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 15px;
+    background: rgba(15, 23, 42, .55);
+}
+
+.variant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.variant-number {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.variant-badge {
+    font-size: .72rem;
+    color: var(--muted);
+}
+
 button {
     width: 100%;
-    padding: 12px;
+    padding: 13px;
     background: var(--accent);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 7px;
     cursor: pointer;
     font-size: 1rem;
     font-weight: bold;
+    margin-top: 8px;
 }
 
 button:hover {
@@ -119,16 +152,17 @@ button:disabled {
 .stats-row {
     display: flex;
     justify-content: space-between;
+    gap: 15px;
     margin-bottom: 10px;
     font-size: .95rem;
 }
 
 .results-list {
     margin-top: 15px;
-    max-height: 250px;
+    max-height: 350px;
     overflow-y: auto;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
     background: var(--bg);
     padding: 10px;
 }
@@ -136,25 +170,84 @@ button:disabled {
 .result-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 10px;
-    padding: 7px 8px;
+    padding: 9px 8px;
     border-bottom: 1px solid var(--card);
-    font-size: .85rem;
+    font-size: .84rem;
 }
 
 .result-item:last-child {
     border-bottom: none;
 }
 
+.result-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .tag-sent {
     color: var(--success);
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .tag-failed {
     color: var(--danger);
     font-weight: bold;
+    white-space: nowrap;
 }
+
+.variant-result {
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.sender-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    border:1px solid var(--border,#ddd);
+    border-radius:10px;
+}
+
+.sender-identity {
+    min-width:0;
+}
+
+.sender-name {
+    font-weight:600;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.sender-status {
+    font-size:12px;
+    margin-top:4px;
+    font-weight:600;
+}
+
+.sender-active {
+    color:#16803c;
+}
+
+.sender-dead {
+    color:#d93025;
+}
+
+.sender-delete {
+    width:auto !important;
+    border:0;
+    background:transparent;
+    cursor:pointer;
+    font-size:18px;
+    padding:6px 8px !important;
+}
+
 </style>
 </head>
 
@@ -162,51 +255,161 @@ button:disabled {
 
 <div class="container">
 
-    <h2>Ranch Oldo Scents Mail</h2>
+    <h2>Creative Workgroup Mail</h2>
 
     <div class="form-group">
         <label>Send From</label>
-        <input
-            type="text"
-            id="sendFrom"
-            value="info@rancholdoscentavos.com">
+
+        <div id="senderPool"></div>
+
+        <button
+            type="button"
+            id="addSenderBtn"
+            style="width:auto;padding:10px 16px;margin-top:10px;"
+            onclick="openSenderModal()"
+        >
+            ＋ ADD SENDER
+        </button>
+    </div>
+
+    <div
+        id="senderModal"
+        style="
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.55);
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
+            padding:20px;
+        "
+    >
+        <div
+            style="
+                width:min(520px,100%);
+                background:var(--card,#fff);
+                border-radius:14px;
+                padding:24px;
+                box-sizing:border-box;
+            "
+        >
+            <h3 style="margin-top:0;">
+                Add Sender
+            </h3>
+
+            <label>Sender Name</label>
+            <input
+                id="senderNameInput"
+                type="text"
+                placeholder="Ashley Owen"
+            >
+
+            <label>Sender Email</label>
+            <input
+                id="senderEmailInput"
+                type="email"
+                placeholder="ashleyowen@example.com"
+            >
+
+            <label>Reply-To Email</label>
+            <input
+                id="senderReplyToInput"
+                type="email"
+                autocomplete="email"
+                placeholder="replies@example.com"
+            >
+
+            <label>Provider</label>
+            <select
+                id="senderProviderInput"
+                onchange="updateCredentialFields()"
+            >
+                <option value="cloudflare">
+                    Cloudflare
+                </option>
+                <option value="resend">
+                    Resend
+                </option>
+            </select>
+
+            <label id="senderCredentialLabel">
+                Cloudflare API Token
+            </label>
+
+            <input
+                id="senderCredentialInput"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Enter credential"
+            >
+
+            <div id="senderAccountGroup">
+                <label>
+                    Cloudflare Account ID
+                </label>
+
+                <input
+                    id="senderAccountInput"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="Enter Account ID"
+                >
+            </div>
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:flex-end;
+                    gap:10px;
+                    margin-top:20px;
+                "
+            >
+                <button
+                    type="button"
+                    onclick="closeSenderModal()"
+                >
+                    CANCEL
+                </button>
+
+                <button
+                    type="button"
+                    id="saveSenderBtn"
+                    onclick="saveSender()"
+                >
+                    SAVE SENDER
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="form-group">
-        <label>Send To — Multiple Recipients</label>
+</div>
+
+    <div class="section-title">Email Variants</div>
+
+    <div id="variants"></div>
+
+    <div style="display:flex;justify-content:flex-end;margin:14px 0 10px;">
+        <button
+            type="button"
+            id="addVariantBtn"
+            style="width:auto;padding:10px 16px;"
+            onclick="addVariant()"
+        >
+            ＋ ADD SUBJECT & EMAIL
+        </button>
+    </div>
+
+    <div class="section-title">Recipients</div>
+
+    <div class="form-group">
+        <label>Send To — One Recipient Per Line</label>
         <textarea
             id="sendTo"
-            placeholder="customer1@gmail.com&#10;customer2@gmail.com&#10;customer3@gmail.com"></textarea>
-    </div>
-
-    <div class="form-group">
-        <label>Reply-To</label>
-        <input
-            type="text"
-            id="replyTo"
-            value="office@rancholdoscentavos.com">
-    </div>
-
-    <div class="form-group">
-        <label>Subject</label>
-        <select id="subject">
-            <option value="Initiative Discussion">Initiative Discussion</option>
-            <option value="Project Assistance">Project Assistance</option>
-            <option value="Company Collaboration">Company Collaboration</option>
-            <option value="Business Project Inquiry">Business Project Inquiry</option>
-            <option value="Inquiry Regarding Your Business or Project">Inquiry Regarding Your Business or Project</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label>Email Body</label>
-        <textarea id="emailBody" style="height:150px;">Greetings,
-
-Are you currently seeking financial support for your business, company, or project? If so, please reach out to learn more about how we can assist.
-
-Best regards,
-
-Ashley Mok</textarea>
+            placeholder="customer1@gmail.com
+customer2@gmail.com
+customer3@gmail.com"></textarea>
     </div>
 
     <button id="sendBtn" type="button" onclick="startSending()">
@@ -216,7 +419,8 @@ Ashley Mok</textarea>
     <div class="stats-box" id="statsSection" style="display:none;">
 
         <div class="stats-row" id="sendingProgress">
-            <strong>Status:</strong> Ready
+            <strong>Status:</strong>
+            <span>Ready</span>
         </div>
 
         <div class="stats-row">
@@ -238,68 +442,442 @@ Ashley Mok</textarea>
 </div>
 
 <script>
+const variantContainer = document.getElementById("variants");
 
-async function startSending() {
-    const sendFrom = document.getElementById("sendFrom").value.trim();
-    const rawTo = document.getElementById("sendTo").value;
-    const replyTo = document.getElementById("replyTo").value.trim();
-    const subject = document.getElementById("subject").value;
-    const body = document.getElementById("emailBody").value;
+const defaultVariants = [
+    {
+        subject: "Event Planning & Management Inquiry – Creative Works Group",
+        body: `Greetings,
 
-    const recipients = rawTo
-        .split(/\r?\n/)
-        .map(email => email.trim())
-        .filter(email => email.length > 0);
+I hope you’re doing well.
 
-    if (!sendFrom) {
-        alert("Please enter a Send From email address.");
-        return;
+Creative Works Group is currently looking ahead to an upcoming event and we’re reaching out to experienced professionals to explore potential planning and event management support.
+
+I’d be interested in learning more about the services you provide, the types of events you typically work on, and the packages or pricing options you currently offer. It would also be useful to understand how you usually approach and coordinate new event projects.
+
+If there appears to be a good fit, we’d be happy to share the event details and discuss the requirements in more depth.
+
+I look forward to hearing from you.
+Best regards,
+Ashley Mok`
+    },
+    {
+        subject: "Exploring Event Management Partnership with Creative Works Group",
+        body: `Greetings,
+
+I hope you’re doing well.
+
+Creative Works Group is currently looking ahead to an upcoming event and we’re reaching out to experienced professionals to explore potential planning and event management support.
+
+I’d be interested in learning more about the services you provide, the types of events you typically work on, and the packages or pricing options you currently offer. It would also be useful to understand how you usually approach and coordinate new event projects.
+
+If there appears to be a good fit, we’d be happy to share the event details and discuss the requirements in more depth.
+
+I look forward to hearing from you.
+Best regards,
+Ashley Mok`
+    },
+    {
+        subject: "Upcoming Event Support Services Inquiry",
+        body: `Greetings,
+
+I hope you’re doing well.
+
+Creative Works Group is currently looking ahead to an upcoming event and we’re reaching out to experienced professionals to explore potential planning and event management support.
+
+I’d be interested in learning more about the services you provide, the types of events you typically work on, and the packages or pricing options you currently offer. It would also be useful to understand how you usually approach and coordinate new event projects.
+
+If there appears to be a good fit, we’d be happy to share the event details and discuss the requirements in more depth.
+
+I look forward to hearing from you.
+Best regards,
+Ashley Mok`
+    },
+    {
+        subject: "Collaboration Inquiry: Creative Works Group Event",
+        body: `Greetings,
+
+I hope you’re doing well.
+
+Creative Works Group is currently looking ahead to an upcoming event and we’re reaching out to experienced professionals to explore potential planning and event management support.
+
+I’d be interested in learning more about the services you provide, the types of events you typically work on, and the packages or pricing options you currently offer. It would also be useful to understand how you usually approach and coordinate new event projects.
+
+If there appears to be a good fit, we’d be happy to share the event details and discuss the requirements in more depth.
+
+I look forward to hearing from you.
+Best regards,
+Ashley Mok`
+    },
+    {
+        subject: "Event Coordination Services - Creative Works Group",
+        body: `Greetings,
+
+I hope you’re doing well.
+
+Creative Works Group is currently looking ahead to an upcoming event and we’re reaching out to experienced professionals to explore potential planning and event management support.
+
+I’d be interested in learning more about the services you provide, the types of events you typically work on, and the packages or pricing options you currently offer. It would also be useful to understand how you usually approach and coordinate new event projects.
+
+If there appears to be a good fit, we’d be happy to share the event details and discuss the requirements in more depth.
+
+I look forward to hearing from you.
+Best regards,
+Ashley Mok`
+    }
+];
+
+defaultVariants.forEach((item, index) => {
+    const i = index + 1;
+    const variant = document.createElement("div");
+
+    variant.className = "variant";
+
+    variant.innerHTML = `
+        <div class="variant-header">
+            <span class="variant-number">Variant ${i}</span>
+            <span class="variant-badge">Subject + Email</span>
+        </div>
+
+        <div class="form-group">
+            <label>Subject</label>
+            <input
+                type="text"
+                id="subject${i}">
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+            <label>Email Body</label>
+            <textarea id="body${i}"></textarea>
+        </div>
+    `;
+
+    variantContainer.appendChild(variant);
+
+    document.getElementById(`subject${i}`).value = item.subject;
+    document.getElementById(`body${i}`).value = item.body;
+});
+
+
+function addVariant() {
+    const container = document.getElementById("variants");
+
+    const card = document.createElement("div");
+    card.className = "variant-card";
+
+    card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong>New Variant</strong>
+            <button
+                type="button"
+                onclick="this.closest('.variant-card').remove(); renumberVariants();"
+                style="width:auto;padding:6px 10px;"
+            >
+                DELETE
+            </button>
+        </div>
+
+        <label>Subject</label>
+        <input
+            type="text"
+            class="variant-subject"
+            placeholder="Email subject"
+        >
+
+        <label>Email</label>
+        <textarea
+            class="variant-body"
+            placeholder="Email body"
+        ></textarea>
+    `;
+
+    container.appendChild(card);
+    renumberVariants();
+}
+
+function renumberVariants() {
+    document.querySelectorAll("#variants .variant-card").forEach((card, index) => {
+        const title = card.querySelector("strong");
+        if (title) {
+            title.textContent = `Variant ${index + 1}`;
+        }
+    });
+}
+
+function getVariants() {
+    const variants = [];
+
+    for (let i = 1; i <= 5; i++) {
+        const subject = document
+            .getElementById(`subject${i}`)
+            .value
+            .trim();
+
+        const body = document
+            .getElementById(`body${i}`)
+            .value;
+
+        if (subject || body.trim()) {
+            variants.push({
+                subject,
+                body
+            });
+        }
     }
 
-    if (recipients.length === 0) {
-        alert("Please enter at least one recipient email address.");
-        return;
-    }
+    return variants;
+}
+
+function renderResults(results) {
+    const list = document.getElementById("resultsList");
+
+    list.innerHTML = "";
+
+    results.forEach(result => {
+        const item = document.createElement("div");
+
+        item.className = "result-item";
+
+        const email = document.createElement("span");
+        email.className = "result-email";
+        email.textContent = result.email;
+
+        const variant = document.createElement("span");
+        variant.className = "variant-result";
+        variant.textContent = `V${result.variant}`;
+
+        const status = document.createElement("span");
+        status.className =
+            result.status === "Sent"
+                ? "tag-sent"
+                : "tag-failed";
+
+        status.textContent = result.status;
+
+        item.appendChild(email);
+        item.appendChild(variant);
+        item.appendChild(status);
+
+        list.appendChild(item);
+    });
+}
+
+
+let mailQueue = null;
+let queueRunning = false;
+let queuePaused = false;
+let queueStopped = false;
+let queueCountdownTimer = null;
+
+function ensureQueueControls() {
+    if (document.getElementById("queueControls")) return;
 
     const sendBtn = document.getElementById("sendBtn");
-    const statsSection = document.getElementById("statsSection");
-    const sendingProgress = document.getElementById("sendingProgress");
-    const sentCountEl = document.getElementById("sentCount");
-    const notSentCountEl = document.getElementById("notSentCount");
+
+    const controls = document.createElement("div");
+    controls.id = "queueControls";
+    controls.style.cssText = `
+        display:flex;
+        gap:10px;
+        margin-top:12px;
+        flex-wrap:wrap;
+    `;
+
+    controls.innerHTML = `
+        <button type="button" id="playQueueBtn">▶ PLAY</button>
+        <button type="button" id="pauseQueueBtn">⏸ PAUSE</button>
+        <button type="button" id="stopQueueBtn">■ STOP</button>
+    `;
+
+    sendBtn.parentNode.insertBefore(controls, sendBtn.nextSibling);
+
+    document.getElementById("playQueueBtn").addEventListener("click", async () => {
+        if (!mailQueue) {
+            startSending();
+            return;
+        }
+
+        if (queueRunning || !queuePaused || queueStopped) return;
+
+        queuePaused = false;
+        queueStopped = false;
+        updateQueueControls();
+        await processQueue();
+    });
+
+    document.getElementById("pauseQueueBtn").addEventListener("click", () => {
+        if (!mailQueue || !queueRunning) return;
+
+        queuePaused = true;
+        queueRunning = false;
+        clearInterval(queueCountdownTimer);
+
+        updateQueueStatus("Paused — press PLAY to continue");
+        updateQueueControls();
+    });
+
+    document.getElementById("stopQueueBtn").addEventListener("click", () => {
+        if (!mailQueue) return;
+
+        queueStopped = true;
+        queuePaused = false;
+        queueRunning = false;
+        clearInterval(queueCountdownTimer);
+
+        updateQueueStatus(
+            `Stopped — ${mailQueue.index} / ${mailQueue.recipients.length} processed`
+        );
+
+        updateQueueControls();
+    });
+
+    updateQueueControls();
+}
+
+function updateQueueControls() {
+    const play = document.getElementById("playQueueBtn");
+    const pause = document.getElementById("pauseQueueBtn");
+    const stop = document.getElementById("stopQueueBtn");
+
+    if (!play || !pause || !stop) return;
+
+    if (!mailQueue) {
+        play.disabled = false;
+        pause.disabled = true;
+        stop.disabled = true;
+        return;
+    }
+
+    play.disabled = queueRunning || queueStopped;
+    pause.disabled = !queueRunning;
+    stop.disabled = queueStopped || mailQueue.index >= mailQueue.recipients.length;
+}
+
+function updateQueueStatus(message) {
+    const progress = document.getElementById("sendingProgress");
+
+    if (!mailQueue) return;
+
+    const total = mailQueue.recipients.length;
+    const processed = mailQueue.index;
+    const remaining = Math.max(total - processed, 0);
+
+    progress.innerHTML = `
+        <strong>Status:</strong>
+        <span>
+            SENT ${mailQueue.sent} / ${total}
+            &nbsp;•&nbsp;
+            FAILED ${mailQueue.failed}
+            &nbsp;•&nbsp;
+            REMAINING ${remaining}
+        </span>
+        <br>
+        <span>${message}</span>
+    `;
+}
+
+function addQueueResult(result) {
+    mailQueue.results.push(result);
+
     const resultsList = document.getElementById("resultsList");
-
-    sendBtn.disabled = true;
-    sendBtn.textContent = "SENDING...";
-
-    statsSection.style.display = "block";
     resultsList.innerHTML = "";
-    sentCountEl.textContent = "0";
-    notSentCountEl.textContent = "0";
 
-    let sent = 0;
-    let notSent = 0;
+    mailQueue.results.forEach(result => {
+        const item = document.createElement("div");
+        item.className = "result-item";
+
+        const email = document.createElement("span");
+        email.className = "result-email";
+        email.textContent = result.email;
+
+        const variant = document.createElement("span");
+        variant.className = "variant-result";
+        variant.textContent =
+            result.variant === "—"
+                ? "—"
+                : `V${result.variant}`;
+
+        const status = document.createElement("span");
+        status.className =
+            result.status === "Sent"
+                ? "tag-sent"
+                : "tag-failed";
+        status.textContent = result.status;
+
+        item.appendChild(email);
+        item.appendChild(variant);
+        item.appendChild(status);
+
+        if (result.status !== "Sent" && result.error) {
+            const error = document.createElement("span");
+            error.className = "result-error";
+            error.textContent =
+                typeof result.error === "string"
+                    ? result.error
+                    : JSON.stringify(result.error);
+            item.appendChild(error);
+        }
+
+        resultsList.appendChild(item);
+    });
+}
+
+async function waitTenSeconds() {
+    for (let seconds = 10; seconds > 0; seconds--) {
+        if (!mailQueue || queueStopped) return false;
+
+        while (queuePaused && !queueStopped) {
+            updateQueueStatus("Paused — press PLAY to continue");
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
+
+        if (queueStopped) return false;
+
+        updateQueueStatus(`Next email in ${seconds} seconds...`);
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    return !queueStopped;
+}
+
+async function processQueue() {
+    if (!mailQueue || queueRunning || queueStopped) return;
+
+    queueRunning = true;
+    queuePaused = false;
+    updateQueueControls();
+
+    const {
+        variants,
+        recipients
+    } = mailQueue;
 
     try {
-        for (let index = 0; index < recipients.length; index++) {
-            const recipient = recipients[index];
+        while (
+            mailQueue.index < recipients.length &&
+            !queueStopped
+        ) {
+            while (queuePaused && !queueStopped) {
+                queueRunning = false;
+                updateQueueStatus("Paused — press PLAY to continue");
+                updateQueueControls();
 
-            sendingProgress.innerHTML =
-                "<strong>Sending:</strong> " +
-                (index + 1) +
-                " / " +
-                recipients.length;
+                await new Promise(resolve => setTimeout(resolve, 250));
 
-            const item = document.createElement("div");
-            item.className = "result-item";
+                if (!queuePaused && !queueStopped) {
+                    queueRunning = true;
+                    updateQueueControls();
+                }
+            }
 
-            item.innerHTML =
-                "<span>→ " +
-                recipient +
-                "</span>" +
-                '<span>Sending...</span>';
+            if (queueStopped) break;
 
-            resultsList.appendChild(item);
-            resultsList.scrollTop = resultsList.scrollHeight;
+            const recipient = recipients[mailQueue.index];
+
+            updateQueueStatus(
+                `Sending ${mailQueue.index + 1} / ${recipients.length} — ${recipient}`
+            );
 
             try {
                 const response = await fetch("/api/send", {
@@ -308,95 +886,563 @@ async function startSending() {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        from: sendFrom,
+                        sender: getNextSender(),
                         to: [recipient],
-                        reply_to: replyTo,
-                        subject: subject,
-                        body: body
+                        variants
                     })
                 });
 
                 const data = await response.json();
 
-                if (!response.ok || data.error || data.success === false) {
-                    let errorMessage = data.error || "Email sending failed.";
+                if (data.sender_failed && data.sender_id) {
+                    markSenderDead(data.sender_id);
 
-                    if (Array.isArray(errorMessage)) {
-                        errorMessage = errorMessage
-                            .map(error => error.message || JSON.stringify(error))
-                            .join(", ");
-                    }
+                    const deadSender = senderPool.find(
+                        sender => sender.id === data.sender_id
+                    );
 
-                    notSent++;
-                    notSentCountEl.textContent = notSent;
+                    updateQueueStatus(
+                        `Sender ${deadSender?.email || "unknown"} marked DEAD — continuing`
+                    );
 
-                    item.innerHTML =
-                        "<span>✕ " +
-                        recipient +
-                        "</span>" +
-                        '<span class="tag-failed">Failed</span>';
+                    mailQueue.failed++;
 
-                    item.title = String(errorMessage);
+                    addQueueResult({
+                        email: recipient,
+                        status: "Failed",
+                        variant:
+                            data.results &&
+                            data.results.length &&
+                            data.results[0].variant
+                                ? data.results[0].variant
+                                : "—",
+                        error:
+                            data.error ||
+                            (
+                                data.results &&
+                                data.results.length
+                                    ? data.results[0].error
+                                    : "Sender failed"
+                            ),
+                        sender: data.sender,
+                        provider: data.provider,
+                        sender_failed: true
+                    });
+
+                    mailQueue.index++;
+                    continue;
+                }
+
+                const result =
+                    data.results && data.results.length
+                        ? data.results[0]
+                        : null;
+
+                if (!response.ok || !result) {
+                    throw new Error(
+                        typeof data.error === "string"
+                            ? data.error
+                            : JSON.stringify(data.error || data)
+                    );
+                }
+
+                addQueueResult(result);
+
+                if (result.status === "Sent") {
+                    mailQueue.sent++;
                 } else {
-                    sent++;
-                    sentCountEl.textContent = sent;
-
-                    item.innerHTML =
-                        "<span>✓ " +
-                        recipient +
-                        "</span>" +
-                        '<span class="tag-sent">Sent</span>';
+                    mailQueue.failed++;
                 }
 
             } catch (error) {
-                notSent++;
-                notSentCountEl.textContent = notSent;
+                mailQueue.failed++;
 
-                item.innerHTML =
-                    "<span>✕ " +
-                    recipient +
-                    "</span>" +
-                    '<span class="tag-failed">Failed</span>';
-
-                item.title = error.message;
+                addQueueResult({
+                    email: recipient,
+                    status: "Failed",
+                    variant: "—",
+                    error: error.message || String(error)
+                });
             }
 
-            resultsList.scrollTop = resultsList.scrollHeight;
+            mailQueue.index++;
 
-            // Wait 10 seconds before the next recipient.
-            if (index < recipients.length - 1) {
-                for (let seconds = 10; seconds > 0; seconds--) {
-                    sendingProgress.innerHTML =
-                        "<strong>Next Send In:</strong> " +
-                        seconds +
-                        " seconds";
+            document.getElementById("sentCount").textContent =
+                mailQueue.sent;
 
-                    await new Promise(resolve =>
-                        setTimeout(resolve, 1000)
-                    );
-                }
+            document.getElementById("notSentCount").textContent =
+                mailQueue.failed;
+
+            updateQueueStatus(
+                `Completed ${mailQueue.index} / ${recipients.length}`
+            );
+
+            if (
+                mailQueue.index < recipients.length &&
+                !queueStopped
+            ) {
+                const completed = await waitTenSeconds();
+
+                if (!completed) break;
             }
         }
 
-        sendingProgress.innerHTML =
-            "<strong>Status:</strong> Batch Complete";
+        if (queueStopped) {
+            updateQueueStatus(
+                `Stopped — ${mailQueue.index} / ${recipients.length} processed`
+            );
+            return;
+        }
 
-        // Clear recipients only after the complete batch has finished.
-        document.getElementById("sendTo").value = "";
+        if (mailQueue.index >= recipients.length) {
+            updateQueueStatus(
+                `Completed — ${recipients.length} processed`
+            );
+
+            document.getElementById("sendTo").value = "";
+
+            queueRunning = false;
+            queuePaused = false;
+
+            updateQueueControls();
+        }
+
+    } finally {
+        queueRunning = false;
+        updateQueueControls();
+    }
+}
+
+
+
+let senderPool = [];
+
+// Sender records are persisted server-side in Supabase.
+// Browser storage is intentionally not used, so every browser/profile/device
+// sees the same sender pool.
+async function loadSenders() {
+    try {
+        const response = await fetch("/api/senders", {
+            method: "GET",
+            headers: { "Accept": "application/json" },
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to load senders.");
+        }
+
+        senderPool = Array.isArray(data.senders) ? data.senders : [];
+        renderSenders();
+    } catch (error) {
+        senderPool = [];
+        renderSenders();
+        console.error("Unable to load sender pool:", error);
+        alert(error.message || "Unable to load saved senders.");
+    }
+}
+
+// Kept as a compatibility no-op for existing sender actions.
+// Persistence is handled by the server API, not browser storage.
+function saveSenders() {}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function renderSenders() {
+    const container = document.getElementById("senderPool");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    senderPool.forEach((sender, index) => {
+        const row = document.createElement("div");
+
+        row.className = "sender-row";
+
+        row.innerHTML = `
+            <div class="sender-identity">
+                <div class="sender-name">
+                    ${escapeHtml(
+                        sender.name
+                        ? `${sender.name} <${sender.email}>`
+                        : sender.email
+                    )}
+                </div>
+
+                <div class="sender-status ${
+                    sender.status === "dead"
+                        ? "sender-dead"
+                        : "sender-active"
+                }">
+                    ${
+                        sender.status === "dead"
+                            ? "● DEAD"
+                            : "● ACTIVE"
+                    }
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="sender-delete"
+                title="Delete sender"
+                aria-label="Delete sender"
+                onclick="deleteSender(${index})"
+            >
+                🗑
+            </button>
+        `;
+
+        container.appendChild(row);
+    });
+
+    saveSenders();
+}
+
+function openSenderModal() {
+    const modal = document.getElementById("senderModal");
+    if (!modal) return;
+
+    document.getElementById("senderNameInput").value = "";
+    document.getElementById("senderEmailInput").value = "";
+    document.getElementById("senderReplyToInput").value = "";
+    document.getElementById("senderCredentialInput").value = "";
+    document.getElementById("senderAccountInput").value = "";
+
+    updateCredentialFields();
+
+    modal.style.display = "flex";
+}
+
+function closeSenderModal() {
+    const modal = document.getElementById("senderModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function updateCredentialFields() {
+    const provider =
+        document.getElementById("senderProviderInput").value;
+
+    const credentialLabel =
+        document.getElementById("senderCredentialLabel");
+
+    const accountGroup =
+        document.getElementById("senderAccountGroup");
+
+    if (provider === "cloudflare") {
+        credentialLabel.textContent =
+            "Cloudflare API Token";
+
+        accountGroup.style.display = "block";
+    } else {
+        credentialLabel.textContent =
+            "Resend API Key";
+
+        accountGroup.style.display = "none";
+    }
+}
+
+async function saveSender() {
+    const name =
+        document.getElementById("senderNameInput")
+            .value
+            .trim();
+
+    const email =
+        document.getElementById("senderEmailInput")
+            .value
+            .trim();
+
+    const replyTo =
+        document.getElementById("senderReplyToInput")
+            .value
+            .trim() || email;
+
+    const provider =
+        document.getElementById("senderProviderInput")
+            .value;
+
+    const credential =
+        document.getElementById("senderCredentialInput")
+            .value
+            .trim();
+
+    const accountId =
+        document.getElementById("senderAccountInput")
+            .value
+            .trim();
+
+    if (!email) {
+        alert("Sender email is required.");
+        return;
+    }
+
+    if (!credential) {
+        alert("Credential is required.");
+        return;
+    }
+
+    if (
+        provider === "cloudflare" &&
+        !accountId
+    ) {
+        alert("Cloudflare Account ID is required.");
+        return;
+    }
+
+    const saveButton =
+        document.getElementById("saveSenderBtn");
+
+    saveButton.disabled = true;
+    saveButton.textContent = "SAVING...";
+
+    try {
+        const response = await fetch("/api/senders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: crypto.randomUUID(),
+                name,
+                email,
+                reply_to: replyTo,
+                provider,
+                credential,
+                account_id: accountId
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.error || "Unable to save sender."
+            );
+        }
+
+        senderPool.push({
+            id: data.sender.id,
+            name: data.sender.name,
+            email: data.sender.email,
+            reply_to: data.sender.reply_to || data.sender.email,
+            provider: data.sender.provider,
+            status: "active"
+        });
+
+        saveSenders();
+        renderSenders();
+        closeSenderModal();
 
     } catch (error) {
-        sendingProgress.innerHTML =
-            "<strong>Status:</strong> Connection Error";
-
         alert(
-            "Network or server error occurred:\n\n" +
-            error.message
+            error.message ||
+            "Unable to save sender."
         );
     } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = "SAVE SENDER";
+    }
+}
+
+async function deleteSender(index) {
+    const sender = senderPool[index];
+
+    if (!sender) return;
+
+    if (
+        !confirm(
+            `Delete ${sender.email}?`
+        )
+    ) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/senders/${encodeURIComponent(sender.id)}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.error ||
+                "Unable to delete sender."
+            );
+        }
+
+        senderPool.splice(index, 1);
+
+        saveSenders();
+        renderSenders();
+
+    } catch (error) {
+        alert(
+            error.message ||
+            "Unable to delete sender."
+        );
+    }
+}
+
+function getSenders() {
+    return senderPool.filter(sender =>
+        sender.status !== "dead" &&
+        sender.email &&
+        sender.email.includes("@")
+    );
+}
+
+function getNextSender() {
+    const active = getSenders();
+
+    if (!active.length) {
+        throw new Error(
+            "No active senders available."
+        );
+    }
+
+    const index =
+        mailQueue.senderIndex %
+        active.length;
+
+    const sender = active[index];
+
+    mailQueue.senderIndex++;
+
+    return {
+        id: sender.id,
+        name: sender.name,
+        email: sender.email,
+        provider: sender.provider
+    };
+}
+
+function markSenderDead(senderId) {
+    const sender = senderPool.find(
+        item => item.id === senderId
+    );
+
+    if (!sender) return;
+
+    sender.status = "dead";
+
+    saveSenders();
+    renderSenders();
+}
+
+loadSenders();
+
+async function startSending() {
+    if (mailQueue && !queueStopped) {
+        if (queuePaused) {
+            queuePaused = false;
+            await processQueue();
+        }
+        return;
+    }
+
+    const sendBtn = document.getElementById("sendBtn");
+
+    const senders = getSenders();
+const rawTo = document
+        .getElementById("sendTo")
+        .value;
+
+    const recipients = [
+        ...new Set(
+            rawTo
+                .split(/\r?\n/)
+                .map(email => email.trim())
+                .filter(Boolean)
+                .map(email => email.toLowerCase())
+        )
+    ];
+
+    const variants = getVariants();
+
+    if (senders.length === 0) {
+        alert("Please add at least one active sender.");
+        return;
+    }
+
+    if (recipients.length === 0) {
+        alert("Please enter at least one recipient.");
+        return;
+    }
+
+    if (variants.length === 0) {
+        alert("Please complete at least one email variant.");
+        return;
+    }
+
+    for (const variant of variants) {
+        if (!variant.subject || !variant.body.trim()) {
+            alert(
+                "Every used variant must have both a subject and email body."
+            );
+            return;
+        }
+    }
+
+    ensureQueueControls();
+
+    const stats = document.getElementById("statsSection");
+    const resultsList = document.getElementById("resultsList");
+
+    stats.style.display = "block";
+    resultsList.innerHTML = "";
+
+    mailQueue = {
+        senders,
+        senderIndex: 0,
+        variants,
+        recipients,
+        index: 0,
+        sent: 0,
+        failed: 0,
+        results: []
+    };
+
+    queueRunning = false;
+    queuePaused = false;
+    queueStopped = false;
+
+    document.getElementById("sentCount").textContent = "0";
+    document.getElementById("notSentCount").textContent = "0";
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = "QUEUE RUNNING...";
+
+    updateQueueControls();
+    updateQueueStatus(
+        `Ready — ${recipients.length} unique recipients queued`
+    );
+
+    await processQueue();
+
+    if (!mailQueue || mailQueue.index >= mailQueue.recipients.length || queueStopped) {
         sendBtn.disabled = false;
         sendBtn.textContent = "SEND EMAILS";
     }
 }
+
+ensureQueueControls();
+
 </script>
 
 </body>
