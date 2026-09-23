@@ -7,11 +7,46 @@ import requests
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 from supabase import create_client
-from flask import Flask, request, jsonify, send_file
+from functools import wraps
+from flask import Flask, request, jsonify, send_file, session
 
 load_dotenv(Path(__file__).resolve().parent / '.env.local', override=True)
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("MAIL_SESSION_SECRET")
+if not app.secret_key:
+    raise RuntimeError("MAIL_SESSION_SECRET is not configured.")
+
+ACCESS_CODE = os.environ.get("MAIL_ACCESS_CODE")
+if not ACCESS_CODE:
+    raise RuntimeError("MAIL_ACCESS_CODE is not configured.")
+
+
+def require_access(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        if not session.get("mail_access"):
+            return jsonify({"success": False, "error": "Access restricted."}), 401
+        return fn(*args, **kwargs)
+    return wrapped
+
+
+@app.post("/api/auth/unlock")
+def unlock():
+    data = request.get_json(silent=True) or {}
+    code = str(data.get("code", ""))
+    if not code or code != ACCESS_CODE:
+        return jsonify({"success": False, "error": "Invalid access code."}), 401
+    session["mail_access"] = True
+    return jsonify({"success": True})
+
+
+@app.post("/api/auth/lock")
+def lock():
+    session.clear()
+    return jsonify({"success": True})
+
+
 
 
 @app.get("/")
@@ -68,6 +103,346 @@ def public_sender(row):
     }
 
 
+
+def public_proxy(row, proxy_number=None):
+    return {
+        "id": row["id"],
+        "host": row["host"],
+        "port": row["port"],
+        "username": row.get("username") or "",
+        "status": row.get("status") or "dead",
+        "last_checked_at": row.get("last_checked_at"),
+        "last_error": row.get("last_error"),
+        "proxy_number": proxy_number,
+    }
+
+
+def get_proxy_rows():
+    db = get_supabase()
+    response = (
+        db.table("proxies")
+        .select("*")
+        .order("created_at")
+        .execute()
+    )
+    return response.data or []
+
+
+def proxy_url(row):
+    host = str(row["host"]).strip()
+    port = str(row["port"]).strip()
+    username = str(row.get("username") or "")
+    password = decrypt_credential(row["password"]) if row.get("password") else ""
+    auth = ""
+    if username:
+        auth = (
+            f"{requests.utils.quote(username, safe='')}:"
+            f"{requests.utils.quote(password, safe='')}@"
+        )
+    return f"http://{auth}{host}:{port}"
+
+
+def test_proxy_row(row):
+    proxy = proxy_url(row)
+    proxies = {"http": proxy, "https": proxy}
+    try:
+        response = requests.get(
+            "https://www.cloudflare.com/cdn-cgi/trace",
+            proxies=proxies,
+            timeout=15,
+        )
+        if not response.ok:
+            raise RuntimeError(f"Proxy test returned HTTP {response.status_code}.")
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
+def mark_proxy_state(proxy_id, status, error=None):
+    db = get_supabase()
+    update = {
+        "status": status,
+        "last_checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "last_error": error,
+    }
+    db.table("proxies").update(update).eq("id", proxy_id).execute()
+
+
+def choose_proxy():
+    rows = [
+        row for row in get_proxy_rows()
+        if (row.get("status") or "dead").lower() == "active"
+    ]
+    if not rows:
+        return None
+
+    rows.sort(
+        key=lambda row: row.get("last_used_at") or "1970-01-01T00:00:00+00:00"
+    )
+    selected = rows[0]
+
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    get_supabase().table("proxies").update(
+        {"last_used_at": now}
+    ).eq("id", selected["id"]).execute()
+
+    all_rows = get_proxy_rows()
+    number_map = {row["id"]: index + 1 for index, row in enumerate(all_rows)}
+    selected["proxy_number"] = number_map.get(selected["id"])
+    return selected
+
+
+@app.get("/api/proxies")
+@require_access
+def get_proxies():
+    try:
+        rows = get_proxy_rows()
+        return jsonify({
+            "success": True,
+            "proxies": [
+                public_proxy(row, index + 1)
+                for index, row in enumerate(rows)
+            ],
+        })
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.post("/api/proxies")
+@require_access
+def add_proxy():
+    try:
+        data = request.get_json(silent=True) or {}
+        host = str(data.get("host", "")).strip()
+        port = str(data.get("port", "")).strip()
+        username = str(data.get("username", "")).strip()
+        password = str(data.get("password", "")).strip()
+
+        if not host or not port or not password:
+            return jsonify({
+                "success": False,
+                "error": "Host, port and password are required.",
+            }), 400
+
+        if not port.isdigit() or not 1 <= int(port) <= 65535:
+            return jsonify({
+                "success": False,
+                "error": "Invalid proxy port.",
+            }), 400
+
+        row = {
+            "host": host,
+            "port": int(port),
+            "username": username,
+            "password": encrypt_credential(password),
+            "status": "dead",
+            "last_error": None,
+        }
+
+        ok, error = test_proxy_row(row)
+        row["status"] = "active" if ok else "dead"
+        row["last_checked_at"] = time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+        )
+        row["last_error"] = error
+
+        response = get_supabase().table("proxies").insert(row).execute()
+        if not response.data:
+            return jsonify({
+                "success": False,
+                "error": "Failed to save proxy.",
+            }), 500
+
+        saved = response.data[0]
+        return jsonify({
+            "success": ok,
+            "proxy": public_proxy(saved),
+            "error": error,
+        }), 201 if ok else 422
+
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.patch("/api/proxies/<proxy_id>")
+@require_access
+def update_proxy(proxy_id):
+    try:
+        data = request.get_json(silent=True) or {}
+        db = get_supabase()
+
+        existing_response = (
+            db.table("proxies")
+            .select("*")
+            .eq("id", proxy_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not existing_response.data:
+            return jsonify({
+                "success": False,
+                "error": "Proxy not found.",
+            }), 404
+
+        existing = existing_response.data[0]
+
+        host = str(data.get("host", existing["host"])).strip()
+        port = str(data.get("port", existing["port"])).strip()
+        username = str(
+            data.get("username", existing.get("username") or "")
+        ).strip()
+        password = str(data.get("password", "")).strip()
+
+        if (
+            not host
+            or not port
+            or not port.isdigit()
+            or not 1 <= int(port) <= 65535
+        ):
+            return jsonify({
+                "success": False,
+                "error": "Invalid proxy host or port.",
+            }), 400
+
+        password_plain = (
+            password or decrypt_credential(existing["password"])
+        )
+
+        candidate = {
+            **existing,
+            "host": host,
+            "port": int(port),
+            "username": username,
+            "password": encrypt_credential(password_plain),
+        }
+
+        ok, error = test_proxy_row(candidate)
+
+        update = {
+            "host": host,
+            "port": int(port),
+            "username": username,
+            "password": candidate["password"],
+            "status": "active" if ok else "dead",
+            "last_checked_at": time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+            ),
+            "last_error": error,
+        }
+
+        response = (
+            db.table("proxies")
+            .update(update)
+            .eq("id", proxy_id)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify({
+                "success": False,
+                "error": "Failed to update proxy.",
+            }), 500
+
+        return jsonify({
+            "success": ok,
+            "proxy": public_proxy(response.data[0]),
+            "error": error,
+        }), 200 if ok else 422
+
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.delete("/api/proxies/<proxy_id>")
+@require_access
+def delete_proxy(proxy_id):
+    try:
+        get_supabase().table("proxies").delete().eq("id", proxy_id).execute()
+        return jsonify({"success": True})
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.post("/api/proxies/<proxy_id>/test")
+@require_access
+def test_saved_proxy(proxy_id):
+    try:
+        db = get_supabase()
+        response = (
+            db.table("proxies")
+            .select("*")
+            .eq("id", proxy_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify({
+                "success": False,
+                "error": "Proxy not found.",
+            }), 404
+
+        row = response.data[0]
+        ok, error = test_proxy_row(row)
+
+        mark_proxy_state(
+            proxy_id,
+            "active" if ok else "dead",
+            error,
+        )
+
+        return jsonify({
+            "success": ok,
+            "error": error,
+            "status": "active" if ok else "dead",
+        })
+
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@app.post("/api/proxies/test-connection")
+@require_access
+def test_new_proxy():
+    try:
+        data = request.get_json(silent=True) or {}
+
+        host = str(data.get("host", "")).strip()
+        port = str(data.get("port", "")).strip()
+        username = str(data.get("username", "")).strip()
+        password = str(data.get("password", "")).strip()
+
+        if (
+            not host
+            or not port
+            or not port.isdigit()
+            or not password
+            or not 1 <= int(port) <= 65535
+        ):
+            return jsonify({
+                "success": False,
+                "error": "Host, valid port and password are required.",
+            }), 400
+
+        row = {
+            "host": host,
+            "port": int(port),
+            "username": username,
+            "password": encrypt_credential(password),
+        }
+
+        ok, error = test_proxy_row(row)
+
+        return jsonify({
+            "success": ok,
+            "error": error,
+        })
+
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 def get_sender_store():
     db = get_supabase()
 
@@ -113,6 +488,7 @@ def mark_sender_dead(sender_id):
 
 
 @app.get("/api/senders")
+@require_access
 def get_senders():
     try:
         db = get_supabase()
@@ -143,6 +519,7 @@ def get_senders():
 
 
 @app.post("/api/senders")
+@require_access
 def add_sender():
     try:
         data = request.get_json(silent=True) or {}
@@ -227,6 +604,7 @@ def add_sender():
 
 
 @app.delete("/api/senders/<sender_id>")
+@require_access
 def remove_sender(sender_id):
     try:
         db = get_supabase()
@@ -250,6 +628,7 @@ def remove_sender(sender_id):
 
 
 @app.post("/api/send")
+@require_access
 def send_email():
     try:
         data = request.get_json(force=True)
@@ -410,6 +789,17 @@ def send_email():
             variant_index = shuffled_variants[index]
             variant = cleaned_variants[variant_index]
 
+            proxy_row = choose_proxy()
+            request_proxies = None
+            proxy_number = None
+
+            if proxy_row:
+                request_proxies = {
+                    "http": proxy_url(proxy_row),
+                    "https": proxy_url(proxy_row),
+                }
+                proxy_number = proxy_row.get("proxy_number")
+
             if provider == "cloudflare":
                 payload = {
                     "from": {
@@ -463,6 +853,7 @@ def send_email():
                     api_url,
                     headers=headers,
                     json=payload,
+                    proxies=request_proxies,
                     timeout=30,
                 )
 
@@ -509,6 +900,7 @@ def send_email():
                         "email": recipient,
                         "status": "Sent",
                         "variant": variant_index + 1,
+                        "proxy_number": proxy_number,
                         "message_id": message_id,
                         "sender_id": sender_id,
                         "sender": sender_address,
@@ -542,6 +934,7 @@ def send_email():
                         "email": recipient,
                         "status": "Failed",
                         "variant": variant_index + 1,
+                        "proxy_number": proxy_number,
                         "error": error_data,
                         "sender_id": sender_id,
                         "sender": sender_address,

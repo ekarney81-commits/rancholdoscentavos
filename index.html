@@ -248,14 +248,164 @@ button:disabled {
     padding:6px 8px !important;
 }
 
+
+#accessGate {
+    position:fixed;
+    inset:0;
+    z-index:20000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg);
+    padding:20px;
+}
+#accessGate .gate-card {
+    width:min(420px,100%);
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px;
+    box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
+#accessGate h2 {
+    margin-top:0;
+}
+#accessError {
+    color:var(--danger);
+    margin-top:10px;
+    font-size:.85rem;
+}
+.proxy-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:8px;
+    margin-bottom:15px;
+}
+.proxy-summary {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:.85rem;
+    color:var(--muted);
+}
+.proxy-summary button {
+    width:auto;
+    padding:6px 8px;
+    margin:0;
+    background:transparent;
+    color:var(--muted);
+}
+.proxy-dead-count {
+    color:var(--danger);
+    font-weight:700;
+}
+.proxy-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px;
+    margin-bottom:8px;
+    border:1px solid var(--border);
+    border-radius:10px;
+}
+.proxy-meta {
+    min-width:0;
+}
+.proxy-address {
+    font-weight:600;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.proxy-detail {
+    color:var(--muted);
+    font-size:.78rem;
+    margin-top:4px;
+}
+.proxy-actions {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+.proxy-actions button {
+    width:auto;
+    padding:7px 9px;
+    margin:0;
+    font-size:.78rem;
+}
+.proxy-live {
+    color:var(--success);
+    font-weight:700;
+}
+.proxy-dead {
+    color:var(--danger);
+    font-weight:700;
+}
+.proxy-modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    align-items:center;
+    justify-content:center;
+    z-index:15000;
+    padding:20px;
+}
+.proxy-modal-card {
+    width:min(520px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px;
+}
+.proxy-modal-card input {
+    margin-bottom:12px;
+}
+.proxy-test-status {
+    font-size:.82rem;
+    margin-top:8px;
+}
+
 </style>
 </head>
 
 <body>
 
+<div id="accessGate" style="display:flex;">
+    <div class="gate-card">
+        <h2>Access restricted</h2>
+        <p>Enter your access code to continue.</p>
+        <input id="accessCodeInput" type="password" autocomplete="off"
+               placeholder="Access code">
+        <button type="button" id="unlockBtn" onclick="unlockApp()">UNLOCK</button>
+        <div id="accessError"></div>
+    </div>
+</div>
+
+
 <div class="container">
 
-    <h2>Mail Console</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><h2 style="flex:1;">Mail Console</h2><button type="button" onclick="lockApp()" style="width:auto;padding:8px 12px;">LOCK</button></div>
+
+    <div class="proxy-header">
+        <div class="section-title" style="margin:0;">Proxy Routing</div>
+        <div class="proxy-summary">
+            <button type="button" onclick="openProxyList('active')" id="liveProxyCount">
+                0 Proxies
+            </button>
+            <button type="button" onclick="openProxyList('dead')" id="deadProxyCount"
+                    class="proxy-dead-count" style="display:none;">
+                0 dead
+            </button>
+            <button type="button" onclick="openProxyModal()" title="Add proxy">＋</button>
+        </div>
+    </div>
+    <div id="proxyList"></div>
+
 
     <div class="form-group">
         <label>Send From</label>
@@ -438,6 +588,35 @@ customer3@gmail.com"></textarea>
         <div class="results-list" id="resultsList"></div>
 
     </div>
+
+
+<div id="proxyModal" class="proxy-modal">
+    <div class="proxy-modal-card">
+        <h3 id="proxyModalTitle">Add Proxy</h3>
+
+        <label>Proxy Host / IP</label>
+        <input id="proxyHostInput" type="text" placeholder="proxy.example.com">
+
+        <label>Port</label>
+        <input id="proxyPortInput" type="number" min="1" max="65535" placeholder="8080">
+
+        <label>Username</label>
+        <input id="proxyUsernameInput" type="text" autocomplete="off">
+
+        <label>Password</label>
+        <input id="proxyPasswordInput" type="password" autocomplete="new-password">
+
+        <button type="button" id="testProxyBtn" onclick="testProxyConnection()">
+            TEST CONNECTION
+        </button>
+        <div id="proxyTestStatus" class="proxy-test-status"></div>
+
+        <div style="display:flex;gap:10px;margin-top:18px;">
+            <button type="button" onclick="closeProxyModal()">CANCEL</button>
+            <button type="button" id="saveProxyBtn" onclick="saveProxy()">SAVE PROXY</button>
+        </div>
+    </div>
+</div>
 
 </div>
 
@@ -715,7 +894,12 @@ function renderResults(results) {
 
         const variant = document.createElement("span");
         variant.className = "variant-result";
-        variant.textContent = `V${result.variant}`;
+        variant.textContent =
+            result.variant && result.proxy_number
+                ? `V${result.variant}/Proxy${result.proxy_number}`
+                : result.variant
+                    ? `V${result.variant}`
+                    : "—";
 
         const status = document.createElement("span");
         status.className =
@@ -866,7 +1050,7 @@ function addQueueResult(result) {
         variant.textContent =
             result.variant === "—"
                 ? "—"
-                : `V${result.variant}`;
+                : (result.proxy_number ? `V${result.variant}/Proxy${result.proxy_number}` : `V${result.variant}`);
 
         const status = document.createElement("span");
         status.className =
@@ -1415,6 +1599,311 @@ function markSenderDead(senderId) {
     saveSenders();
     renderSenders();
 }
+
+
+let proxyPool = [];
+let proxyModalMode = "add";
+let editingProxyId = null;
+let proxyTestPassed = false;
+
+
+async function lockApp() {
+    try {
+        await fetch("/api/auth/lock", {method: "POST"});
+    } finally {
+        location.reload();
+    }
+}
+
+async function unlockApp() {
+    const input = document.getElementById("accessCodeInput");
+    const error = document.getElementById("accessError");
+    const button = document.getElementById("unlockBtn");
+
+    error.textContent = "";
+    button.disabled = true;
+
+    try {
+        const response = await fetch("/api/auth/unlock", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({code: input.value})
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Invalid access code.");
+        }
+
+        document.getElementById("accessGate").style.display = "none";
+        await loadSenders();
+        await loadProxies();
+    } catch (error) {
+        error.textContent = error.message || "Unable to unlock.";
+    } finally {
+        button.disabled = false;
+    }
+}
+
+document.getElementById("accessCodeInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") unlockApp();
+});
+
+async function loadProxies() {
+    try {
+        const response = await fetch("/api/proxies", {cache: "no-store"});
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to load proxies.");
+        }
+
+        proxyPool = Array.isArray(data.proxies) ? data.proxies : [];
+        renderProxySummary();
+    } catch (error) {
+        console.error("Unable to load proxies:", error);
+    }
+}
+
+function renderProxySummary() {
+    const live = proxyPool.filter(proxy => proxy.status === "active").length;
+    const dead = proxyPool.filter(proxy => proxy.status !== "active").length;
+
+    const liveButton = document.getElementById("liveProxyCount");
+    const deadButton = document.getElementById("deadProxyCount");
+
+    liveButton.textContent = `${live} ${live === 1 ? "Proxy" : "Proxies"}`;
+
+    if (dead) {
+        deadButton.style.display = "inline-block";
+        deadButton.textContent = `${dead} dead`;
+    } else {
+        deadButton.style.display = "none";
+    }
+}
+
+function openProxyList(status) {
+    const list = document.getElementById("proxyList");
+    const filtered = proxyPool.filter(proxy =>
+        status === "active"
+            ? proxy.status === "active"
+            : proxy.status !== "active"
+    );
+
+    list.innerHTML = "";
+
+    if (!filtered.length) {
+        list.innerHTML = `<div style="color:var(--muted);padding:8px 0;">
+            No ${status === "active" ? "live" : "dead"} proxies.
+        </div>`;
+        return;
+    }
+
+    filtered.forEach(proxy => {
+        const row = document.createElement("div");
+        row.className = "proxy-row";
+
+        const error = proxy.last_error
+            ? escapeHtml(proxy.last_error)
+            : "";
+
+        row.innerHTML = `
+            <div class="proxy-meta">
+                <div class="proxy-address">
+                    Proxy${proxy.proxy_number}: ${escapeHtml(proxy.host)}:${proxy.port}
+                </div>
+                <div class="proxy-detail">
+                    ${escapeHtml(proxy.username || "No username")}
+                    &nbsp;•&nbsp;
+                    <span class="${proxy.status === "active" ? "proxy-live" : "proxy-dead"}">
+                        ${proxy.status === "active" ? "LIVE" : "DEAD"}
+                    </span>
+                </div>
+                ${error ? `<div class="proxy-detail">${error}</div>` : ""}
+            </div>
+            <div class="proxy-actions">
+                ${proxy.status !== "active"
+                    ? `<button type="button" onclick="testSavedProxy('${proxy.id}')">TEST AGAIN</button>`
+                    : ""}
+                <button type="button" onclick="editProxy('${proxy.id}')">EDIT</button>
+                <button type="button" onclick="deleteProxy('${proxy.id}')">DELETE</button>
+            </div>
+        `;
+
+        list.appendChild(row);
+    });
+}
+
+function openProxyModal(proxy = null) {
+    proxyModalMode = proxy ? "edit" : "add";
+    editingProxyId = proxy ? proxy.id : null;
+    proxyTestPassed = false;
+
+    document.getElementById("proxyModalTitle").textContent =
+        proxy ? "Edit Proxy" : "Add Proxy";
+
+    document.getElementById("proxyHostInput").value = proxy?.host || "";
+    document.getElementById("proxyPortInput").value = proxy?.port || "";
+    document.getElementById("proxyUsernameInput").value = proxy?.username || "";
+    document.getElementById("proxyPasswordInput").value = "";
+    document.getElementById("proxyTestStatus").textContent =
+        proxy ? "Enter a new password only if you want to change it." : "";
+
+    document.getElementById("proxyModal").style.display = "flex";
+}
+
+function closeProxyModal() {
+    document.getElementById("proxyModal").style.display = "none";
+}
+
+function editProxy(proxyId) {
+    const proxy = proxyPool.find(item => item.id === proxyId);
+    if (proxy) openProxyModal(proxy);
+}
+
+async function testProxyConnection() {
+    const host = document.getElementById("proxyHostInput").value.trim();
+    const port = document.getElementById("proxyPortInput").value.trim();
+    const username = document.getElementById("proxyUsernameInput").value.trim();
+    const password = document.getElementById("proxyPasswordInput").value;
+
+    if (!host || !port || !password) {
+        alert("Host, port and password are required for a connection test.");
+        return;
+    }
+
+    const button = document.getElementById("testProxyBtn");
+    const status = document.getElementById("proxyTestStatus");
+
+    button.disabled = true;
+    button.textContent = "TESTING...";
+    status.textContent = "";
+
+    try {
+        const response = await fetch("/api/proxies/test-connection", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({host, port, username, password})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            proxyTestPassed = false;
+            throw new Error(data.error || "Proxy test failed.");
+        }
+
+        proxyTestPassed = true;
+        status.textContent = "Connection successful. Proxy can be saved.";
+        status.style.color = "var(--success)";
+    } catch (error) {
+        proxyTestPassed = false;
+        status.textContent = error.message || "Proxy test failed.";
+        status.style.color = "var(--danger)";
+    } finally {
+        button.disabled = false;
+        button.textContent = "TEST CONNECTION";
+    }
+}
+
+async function saveProxy() {
+    const host = document.getElementById("proxyHostInput").value.trim();
+    const port = document.getElementById("proxyPortInput").value.trim();
+    const username = document.getElementById("proxyUsernameInput").value.trim();
+    const password = document.getElementById("proxyPasswordInput").value;
+
+    if (!host || !port) {
+        alert("Host and port are required.");
+        return;
+    }
+
+    if (proxyModalMode === "add" && !password) {
+        alert("Password is required.");
+        return;
+    }
+
+    if (!proxyTestPassed) {
+        alert("Test the proxy connection successfully before saving.");
+        return;
+    }
+
+    const button = document.getElementById("saveProxyBtn");
+    button.disabled = true;
+    button.textContent = "SAVING...";
+
+    try {
+        const endpoint = proxyModalMode === "add"
+            ? "/api/proxies"
+            : `/api/proxies/${encodeURIComponent(editingProxyId)}`;
+
+        const response = await fetch(endpoint, {
+            method: proxyModalMode === "add" ? "POST" : "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({host, port, username, password})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to save proxy.");
+        }
+
+        closeProxyModal();
+        await loadProxies();
+        openProxyList("active");
+    } catch (error) {
+        alert(error.message || "Unable to save proxy.");
+    } finally {
+        button.disabled = false;
+        button.textContent = "SAVE PROXY";
+    }
+}
+
+async function testSavedProxy(proxyId) {
+    try {
+        const response = await fetch(
+            `/api/proxies/${encodeURIComponent(proxyId)}/test`,
+            {method: "POST"}
+        );
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Proxy test failed.");
+        }
+
+        await loadProxies();
+        openProxyList("active");
+    } catch (error) {
+        alert(error.message || "Proxy test failed.");
+        await loadProxies();
+        openProxyList("dead");
+    }
+}
+
+async function deleteProxy(proxyId) {
+    const proxy = proxyPool.find(item => item.id === proxyId);
+    if (!proxy) return;
+
+    if (!confirm(`Delete Proxy${proxy.proxy_number}?`)) return;
+
+    try {
+        const response = await fetch(
+            `/api/proxies/${encodeURIComponent(proxyId)}`,
+            {method: "DELETE"}
+        );
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to delete proxy.");
+        }
+
+        await loadProxies();
+        document.getElementById("proxyList").innerHTML = "";
+    } catch (error) {
+        alert(error.message || "Unable to delete proxy.");
+    }
+}
+
 
 loadSenders();
 
